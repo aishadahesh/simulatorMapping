@@ -155,6 +155,7 @@ private:
     pangolin::GlGeometry geomToRender;
     Eigen::Vector2i viewportDesiredSize;
     cv::Mat Tcw;
+    //cv::Mat Tcw = cv::Mat::zeros(4, 4, CV_64F); 
     std::mutex locationLock;
 
     void simulatorRunThread();

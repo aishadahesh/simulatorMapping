@@ -64,20 +64,27 @@ void Simulator::command(std::string &command, int intervalUsleep, double fps, in
     }
 }
 
+//here we are going to change a little in the code
+//our goal is, if it's stuck (in the table/wall..) so send a warning.
 void Simulator::simulatorRunThread() {
+    // Create a new window and bind the OpenGL context to it
     pangolin::CreateWindowAndBind("Main", viewportDesiredSize[0], viewportDesiredSize[1]);
+    // Enable depth testing
     glEnable(GL_DEPTH_TEST);
+    // Configure projection and model-view matrices for the camera
     s_cam = pangolin::OpenGlRenderState(
             pangolin::ProjectionMatrix(viewportDesiredSize(0), viewportDesiredSize(1), K(0, 0), K(1, 1), K(0, 2),
                                        K(1, 2), 0.1, 20),
             pangolin::ModelViewLookAt(0.1, -0.1, 0.3, 0, 0, 0, 0.0, -1.0,
                                       pangolin::AxisY)); // the first 3 value are meaningless because we change them later
 
+    // Flags for toggling different elements
     bool show_bounds = false;
     bool show_axis = false;
     bool show_x0 = false;
     bool show_y0 = false;
     bool show_z0 = false;
+    // Register key press events. The function associated with each key press will run when the key is pressed
     pangolin::RegisterKeyPressCallback('b', [&]() { show_bounds = !show_bounds; });
     pangolin::RegisterKeyPressCallback('0', [&]() { cull_backfaces = !cull_backfaces; });
     pangolin::RegisterKeyPressCallback('a', [&]() { show_axis = !show_axis; });
@@ -97,36 +104,51 @@ void Simulator::simulatorRunThread() {
         applyUpModelCam(s_cam, -movementFactor);
     });// ORBSLAM y axis is reversed
     pangolin::RegisterKeyPressCallback('f', [&]() { applyUpModelCam(s_cam, movementFactor); });
+    // Load 3D model and align the model's view point to a surface
     const pangolin::Geometry modelGeometry = pangolin::LoadGeometry(modelPath);
     alignModelViewPointToSurface(modelGeometry, modelTextureNameToAlignTo);
+    // Prepare the model for rendering
     geomToRender = pangolin::ToGlGeometry(modelGeometry);
     for (auto &buffer: geomToRender.buffers) {
         buffer.second.attributes.erase("normal");
     }
     cv::Mat img;
-
+    // Create a shader program      
     auto LoadProgram = [&]() {
         program.ClearShaders();
         program.AddShader(pangolin::GlSlAnnotatedShader, pangolin::shader);
         program.Link();
     };
     LoadProgram();
+    // Create a handler for the 3D model
     pangolin::Handler3D handler(s_cam);
+     // Create a new view (display area)
     pangolin::View &d_cam = pangolin::CreateDisplay()
             .SetBounds(0.0, 1.0, 0.0, 1.0, ((float) -viewportDesiredSize[0] / (float) viewportDesiredSize[1]))
             .SetHandler(&handler);
     int numberOfFramesForOrbslam = 0;
+
+    cv::Mat lastKnownPosition;  // Initialize an empty cv::Mat to hold the last known position
+    int samePositionCount = 0;  // Counter to keep track of how long the drone has been in the same position
+    double positionChange;
+
+    // Main simulation loop
     while (!pangolin::ShouldQuit() && !stopFlag) {
+        // Mark the simulator as ready
         ready = true;
+        // Clear color and depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        if (d_cam.IsShown()) {
-            d_cam.Activate();
+ 
+        if (d_cam.IsShown()) {       // If the view is shown
+            d_cam.Activate();   // Activate the view
 
+            // If culling is enabled, enable culling of back faces
             if (cull_backfaces) {
                 glEnable(GL_CULL_FACE);
                 glCullFace(GL_BACK);
             }
+            // Use the shader program for rendering
             program.Bind();
             program.SetUniform("KT_cw", s_cam.GetProjectionMatrix() * s_cam.GetModelViewMatrix());
             pangolin::GlDraw(program, geomToRender, nullptr);
@@ -173,17 +195,36 @@ void Simulator::simulatorRunThread() {
                     orbExtractor->operator()(img, cv::Mat(), pts, mDescriptors);
                     Tcw = SLAM->TrackMonocular(mDescriptors, pts, timestamp);
                 }
+                    cv::Mat curr_location = Tcw.clone();
+                    if (!curr_location.empty()){
+                        lastKnownPosition = curr_location.clone();
+                    }
+                    // Compare the current position to the last known position
+                    if (!lastKnownPosition.empty()) {
+                        if (!lastKnownPosition.empty() && !curr_location.empty())
+                            positionChange = cv::norm(curr_location - lastKnownPosition);
+                        if (positionChange > 0) {  //1e-6
+                            samePositionCount = 0;
+                        } 
+                        else {
+                            samePositionCount++;
+                            if (samePositionCount > 2100) { 
+                                std::cout << "WARNING: The drone might be stuck!" << std::endl;
+                                samePositionCount = 0;
+                            }   
+                        }
+                    // Update the last known position
+                    lastKnownPosition = curr_location.clone();
+                  }
 
                 locationLock.unlock();
             }
+            s_cam.Apply();  // Apply camera transformations
 
-            s_cam.Apply();
+            glDisable(GL_CULL_FACE);    // Disable culling
 
-            glDisable(GL_CULL_FACE);
-
-//             drawPoints(seenPoints, keypoint_points);
+        //drawPoints(seenPoints, keypoint_points);
         }
-
         pangolin::FinishFrame();
     }
     if (isSaveMap) {
