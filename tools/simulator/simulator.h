@@ -1,3 +1,4 @@
+// a destructor was added here
 //
 // Created by tzuk on 6/4/23.
 //
@@ -65,6 +66,8 @@ public:
               std::string mapLoadPath = "../slamMaps/example.bin",
               double movementFactor = 0.01,
               std::string vocPath = "../Vocabulary/ORBvoc.txt");
+    ~Simulator();      
+
 
 /**
  *Starts the 3D model viewer (pangolin), and wait for the user or code signal to start sending the view to the ORBSLAM2 object

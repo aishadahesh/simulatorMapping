@@ -1,3 +1,6 @@
+// Memory leak check
+// No memory leak was founded
+
 #include <thread>
 #include <future>
 #include <queue>

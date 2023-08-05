@@ -1,3 +1,5 @@
+// Memory leak check
+
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -44,4 +46,5 @@ int main(void)
 
     cv::imwrite("/home/liam/image_keypoints.png", image_keypoints);
     cv::waitKey(2);
+    delete (orbExtractor);
     return 0;}

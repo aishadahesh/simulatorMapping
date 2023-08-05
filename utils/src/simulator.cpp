@@ -1,3 +1,5 @@
+//memory leak check 
+
 #include "include/simulator.h"
 
 #define RESULT_POINT_X 0.1
@@ -795,8 +797,10 @@ void Simulator::CheckResults() {
 
 Simulator::~Simulator() {
     for (auto ptr : this->mPoints) {
-        free(ptr);
+        //free(ptr);
+        delete (ptr);
     }
     if (this->mSystem != nullptr)
-        free(this->mSystem);
+        //free(this->mSystem);
+        delete (this->mSystem);
 }

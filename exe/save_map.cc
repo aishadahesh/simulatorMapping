@@ -1,3 +1,5 @@
+// Memory leak check
+// No memory leak was founded
 #include <memory>
 #include <string>
 #include <thread>

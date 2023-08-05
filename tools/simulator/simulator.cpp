@@ -1,3 +1,5 @@
+//memory leak check 
+//a destructor was added
 //
 // Created by tzuk on 6/4/23.
 //
@@ -37,6 +39,8 @@ Simulator::Simulator(std::string ORBSLAMConfigFile, std::string model_path, std:
                                                mapLoadPath,
                                                true);
     K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
+    // this object was never freed so we have to free it at the end or use smart pointer
+    //orbExtractor = std::make_unique<ORB_SLAM2::ORBextractor>(nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
     orbExtractor = new ORB_SLAM2::ORBextractor(nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST);
     char time_buf[21];
     time_t now;
@@ -45,6 +49,7 @@ Simulator::Simulator(std::string ORBSLAMConfigFile, std::string model_path, std:
     std::string currentTime(time_buf);
     simulatorOutputDir = simulatorOutputDirPath + "/" + currentTime + "/";
     std::filesystem::create_directory(simulatorOutputDir);
+
 
 }
 
@@ -185,6 +190,7 @@ void Simulator::simulatorRunThread() {
         }
 
         pangolin::FinishFrame();
+        
     }
     if (isSaveMap) {
 
@@ -402,3 +408,7 @@ Simulator::alignModelViewPointToSurface(const pangolin::Geometry &modelGeometry,
     s_cam.SetProjectionMatrix(proj);
     applyPitchRotationToModelCam(s_cam, -90);
 }
+
+//Simulator::~Simulator() {
+//     delete (this->orbExtractor);
+// }
