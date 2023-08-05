@@ -1,3 +1,5 @@
+// Memory leak check 
+
 #include <thread>
 #include <future>
 #include <queue>
@@ -174,8 +176,10 @@ void runModelAndOrbSlam(std::string &settingPath, bool *stopFlag, std::shared_pt
     int fIniThFAST = fSettings["ORBextractor.iniThFAST"];
     int fMinThFAST = fSettings["ORBextractor.minThFAST"];
 
+    //this pointer is not freed so we better free it or use smart pointer
+    //std::unique_ptr<ORB_SLAM2::ORBextractor> orbExtractor(new ORB_SLAM2::ORBextractor(nFeatures, fScaleFactor, nLevels, fIniThFAST, fMinThFAST));
     ORB_SLAM2::ORBextractor *orbExtractor = new ORB_SLAM2::ORBextractor(nFeatures, fScaleFactor, nLevels, fIniThFAST,
-                                                                        fMinThFAST);
+                                                                       fMinThFAST);
 
     // Options
     bool show_bounds = false;
@@ -363,6 +367,7 @@ void runModelAndOrbSlam(std::string &settingPath, bool *stopFlag, std::shared_pt
 
         pangolin::FinishFrame();
     }
+    delete (orbExtractor);
     writer.release();
     saveMap(0, simulatorOutputDir, &SLAM);
     SLAM.SaveMap(simulatorOutputDir + "/simulatorCloudPoint.bin");
@@ -527,8 +532,6 @@ int main(int argc, char **argv) {
     //    if (isSavingMap) {
     //        SLAM->SaveMap(simulatorOutputDir + "simulatorMap.bin");
     //    }
-    //
-    //    SLAM->Shutdown();
-
+    
     return 0;
 }

@@ -1,3 +1,5 @@
+// Memory leak check
+
 #include <thread>
 #include <future>
 #include <queue>
@@ -263,6 +265,6 @@ int main(int argc, char **argv) {
 
         pangolin::FinishFrame();
     }
-
+    delete (orbExtractor);
     return 0;
 }
