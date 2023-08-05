@@ -18,6 +18,8 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Memory leak check 
+// No memory leak was founded
 #include "include/simulator.h"
 
 void handleKeyboardEventsScan(Simulator *simulator) {

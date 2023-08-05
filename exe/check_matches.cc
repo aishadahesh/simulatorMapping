@@ -1,3 +1,5 @@
+//memory leak check 
+//a memory leak was found- there was not clearing for the allocated resources
 #include <iostream>
 #include <vector>
 #include <string>
@@ -44,6 +46,9 @@ int main(int argc, char **argv)
   int fIniThFAST = fSettings["ORBextractor.iniThFAST"];
   int fMinThFAST = fSettings["ORBextractor.minThFAST"];
 
+  //allocating memory that can cause a memory leak if we dont't free it correct
+  //there are 2 solutions for this: free the allocated memory, or use smart pointer instead
+  //std::unique_ptr<ORB_SLAM2::ORBextractor> mpORBextractorLeft = std::make_unique<ORB_SLAM2::ORBextractor>(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
   ORB_SLAM2::ORBextractor* mpORBextractorLeft = new ORB_SLAM2::ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
   // Set up ORB feature detector and matcher
@@ -143,6 +148,6 @@ int main(int argc, char **argv)
           cv::imwrite("/home/liam/Downloads/a/matching_texture" + std::to_string(i) + "_frame" + std::to_string(j) + ".png", final_image);
       }
   }
-
+  delete (mpORBextractorLeft);
   return 0;
 }

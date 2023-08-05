@@ -1,3 +1,6 @@
+// Memory leak check 
+// No memory leak was founded
+
 #include <pangolin/utils/file_utils.h>
 #include <pangolin/geometry/glgeometry.h>
 

@@ -1,3 +1,6 @@
+// Memory leak check 
+// No memory leak was founded
+
 #include <math.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
@@ -24,7 +27,7 @@ int main()
 
     // Check settings file
     cv::FileStorage fsSettings(droneYamlPathSlam, cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
+    if(!fsSettings.isOpened())  // we dont need to close it, because it's automatically closed
     {
        std::cerr << "Failed to open settings file at: " << droneYamlPathSlam << std::endl;
        exit(-1);

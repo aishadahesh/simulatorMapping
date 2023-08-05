@@ -1,3 +1,4 @@
+//memory leak check 
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -10,9 +11,12 @@
 
 // Defining the dimensions of checkerboard
 int CHECKERBOARD[2]{6, 9};
+//this smart pointers (shared_ptr) can cause a memory leak if we dont use them correct!
+//we don't have to free them, but we have to use them carefully
 std::shared_ptr<cv::VideoCapture> capture;
 std::shared_ptr<cv::Mat> frame;
 std::shared_ptr<bool> stop;
+
 void videoDroneThread(std::string &videoPath){
     capture = std::make_shared<cv::VideoCapture>(videoPath);
     stop = std::make_shared<bool>(false);

@@ -1,3 +1,6 @@
+// Memory leak check 
+// No memory leak was founded
+
 #include "include/Auxiliary.h"
 
 // Function to read XYZ file into a vector of cv::Point3d

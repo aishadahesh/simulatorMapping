@@ -1,3 +1,6 @@
+//memory leak check 
+//no memory leak was founded
+
 #include <iostream>
 #include <vector>
 #include <string>

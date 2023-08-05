@@ -1,3 +1,6 @@
+// Memory leak check 
+// No memory leak was founded
+
 #include <opencv2/opencv.hpp>
 
 #include <pcl/point_types.h>

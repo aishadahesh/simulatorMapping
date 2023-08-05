@@ -1,3 +1,7 @@
+// Memory leak check 
+// No memory leak was founded
+
+
 #include <string>
 #include <nlohmann/json.hpp>
 #include <opencv2/opencv.hpp>

@@ -1,3 +1,5 @@
+// Memory leak check
+// a destructor was added fior 'simalotor' 
 //
 // Created by tzuk on 6/4/23.
 //
