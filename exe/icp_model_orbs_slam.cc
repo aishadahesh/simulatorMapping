@@ -33,7 +33,7 @@ std::vector<cv::Point3d> readPointsFromCSV(const std::string& filePath) {
 
         points.emplace_back(x, y, z);
     }
-
+    file.close();
     return points;
 }
 
@@ -59,7 +59,7 @@ std::vector<cv::Point3d> readPointsFromXYZ(const std::string& filePath) {
 
         points.emplace_back(x, y, z);
     }
-
+    file.close();
     return points;
 }
 

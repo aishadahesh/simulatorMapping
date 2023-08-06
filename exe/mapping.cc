@@ -1,5 +1,5 @@
 // Memory leak check 
-// No memory leak was founded
+// there are files that we had to close
 
 #include <System.h>
 #include <unistd.h>
@@ -59,11 +59,13 @@ int main(int argc, char **argv) {
     cv::VideoCapture cap;
     cv::VideoWriter writer;
     writer.open("./" + directory_named_time + "/mapping.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 30.0, cv::Size(640, 480), true);
-    if (use_drone) {
-        //  drone.tello_stream_on();
-    } else {
+    // if (use_drone) {
+    //     //  drone.tello_stream_on();
+    // } else {
+    //     cap.open(0);
+    // }
+    if (!use_drone)
         cap.open(0);
-    }
 
     int frame_cnt = 0;
     while (true) {
@@ -92,7 +94,10 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "Finished..." << std::endl;
-
+    if (!use_drone) 
+        cap.release();
+    
+    writer.release();
     SLAM.Shutdown();
     SLAM.SaveMap(Slam_lastest_Map_location);
     cvDestroyAllWindows();

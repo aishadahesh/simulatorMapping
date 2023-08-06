@@ -1,5 +1,4 @@
 //memory leak check 
-//no memory leak was founded
 //
 // Created by rbdstudent on 17/06/2021.
 //
@@ -54,7 +53,7 @@ void Auxiliary::getPoints(std::string csvPath, std::vector<cv::Point3f> *points,
     std::string line, word, temp;
 
     while (!pointData.eof()) {
-        cv::Point3f pointToCompare;
+        cv::Point3f pointToCompare; //we can define it out of loop?!
 
         row.clear();
         
@@ -197,6 +196,7 @@ std::vector<cv::Point3d> Auxiliary::getPointsFromPos(const std::string cloud_poi
     double cy = fsSettings["Camera.cy"];
     int width = fsSettings["Camera.width"];
     int height = fsSettings["Camera.height"];
+    fsSettings.release();
 
     double minX = 3.7;
     double maxX = width;
@@ -469,7 +469,7 @@ std::vector<cv::Point3d> Auxiliary::getPointsFromTcw(const std::string cloud_poi
 
         seen_points.push_back(cv::Point3d(worldPos.at<double>(0), worldPos.at<double>(1), worldPos.at<double>(2)));
     }
-
+    fsSettings.release();
     return seen_points;
 }
 

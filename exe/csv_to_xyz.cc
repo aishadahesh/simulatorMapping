@@ -1,5 +1,5 @@
 // Memory leak check 
-// No memory leak was founded
+// a file was not closed
 
 #include <opencv2/opencv.hpp>
 
@@ -32,7 +32,7 @@ std::vector<cv::Point3d> readPointsFromCSV(const std::string& filePath) {
 
         points.emplace_back(x, y, z);
     }
-
+    file.close();
     return points;
 }
 

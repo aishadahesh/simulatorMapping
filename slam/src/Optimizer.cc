@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
-
+//memory leak check - no changes
 #include "Optimizer.h"
 
 #include "../Thirdparty/g2o/g2o/core/block_solver.h"

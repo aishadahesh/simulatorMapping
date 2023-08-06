@@ -17,7 +17,7 @@
 * You should have received a copy of the GNU General Public License
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
-
+//memory leak check - there are no updates
 #include "Initializer.h"
 
 #include "../Thirdparty/DBoW2/DUtils/Random.h"

@@ -1,5 +1,4 @@
 // Memory leak check 
-// No memory leak was founded
 
 #include <math.h>
 #include <eigen3/Eigen/Core>
@@ -53,6 +52,8 @@ int main()
     double cy = fsSettings["Camera.cy"];
     int width = fsSettings["Camera.width"];
     int height = fsSettings["Camera.height"];
+
+    fsSettings.release();
 
     double minX = 3.7;
     double maxX = width;

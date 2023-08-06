@@ -46,5 +46,6 @@ int main(void)
 
     cv::imwrite("/home/liam/image_keypoints.png", image_keypoints);
     cv::waitKey(2);
+    fSettings.release();
     delete (orbExtractor);
     return 0;}

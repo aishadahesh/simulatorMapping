@@ -409,6 +409,6 @@ Simulator::alignModelViewPointToSurface(const pangolin::Geometry &modelGeometry,
     applyPitchRotationToModelCam(s_cam, -90);
 }
 
-//Simulator::~Simulator() {
-//     delete (this->orbExtractor);
-// }
+Simulator::~Simulator() {
+    delete (this->orbExtractor);
+}

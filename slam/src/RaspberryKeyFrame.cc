@@ -3,6 +3,7 @@
 // #include "ORBmatcher.h"
 // #include<mutex>
 
+//memory leak check - no changes
 namespace ORB_SLAM2
 {
 

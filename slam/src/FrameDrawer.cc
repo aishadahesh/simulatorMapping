@@ -18,6 +18,7 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
+//memory leak check - there are no updates
 #include "FrameDrawer.h"
 #include "Tracking.h"
 

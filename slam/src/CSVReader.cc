@@ -1,7 +1,7 @@
 
 #include "CSVReader.h"
 
-
+//memory leak check - there are no updates
 /*
 * Parses through csv file line by line and returns the data
 * in vector of vector of strings.

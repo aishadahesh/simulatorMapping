@@ -18,7 +18,7 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+//memory leak check - no changes
 
 #include "System.h"
 #include "Converter.h"

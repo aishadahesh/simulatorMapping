@@ -44,6 +44,7 @@ int main() {
     char ch = '\0';
     do {
         // Update the points seen
+        //what is the point from defining it here? we can define it out of the loop and reduce memory leak!
         std::vector<cv::Point3d> new_points_seen = Auxiliary::getPointsFromPos(cloud_points, current_position, current_yaw, current_pitch, current_roll, Twc);
 
         std::vector<cv::Point3d>::iterator it;

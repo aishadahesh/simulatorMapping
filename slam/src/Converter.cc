@@ -18,7 +18,7 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+//memory leak check - there are no updates
 #include "Converter.h"
 
 namespace ORB_SLAM2

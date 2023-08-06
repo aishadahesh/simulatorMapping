@@ -126,6 +126,7 @@ void Simulator::initPoints() {
         offlineMapPoint = new OfflineMapPoint(cv::Point3d(point[0], point[1], point[2]), point[3], point[4], cv::Point3d(point[5], point[6], point[7]), currKeyPoints, currDesc);
         this->mPoints.emplace_back(offlineMapPoint);
     }
+    descData.close();
     pointData.close();
 }
 
@@ -323,7 +324,7 @@ std::vector<OfflineMapPoint*> Simulator::getPointsFromTcw() {
 
         seen_points.push_back(point);
     }
-
+    fsSettings.release();
     return seen_points;
 }
 

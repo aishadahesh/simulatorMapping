@@ -1,5 +1,4 @@
 // Memory leak check 
-// No memory leak was founded
 
 #include "include/Auxiliary.h"
 
@@ -25,7 +24,7 @@ std::vector<cv::Point3d> readPointsFromXYZ(const std::string& filePath) {
 
         points.emplace_back(x, y, z);
     }
-
+    file.close();
     return points;
 }
 
