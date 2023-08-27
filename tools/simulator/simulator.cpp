@@ -4,6 +4,247 @@
 
 #include "simulator.h"
 
+struct Face {
+    std::vector<int> vertexIndices;
+};
+
+//this function send an error message if the drone got stuck
+void Simulator::errorMessage ()
+{
+    std::cout << "drone got stuck!" << std::endl;
+    exit(-1);
+}
+//this function check if the point inside single polygon
+bool Simulator::isPointInsideSinglePolygon(const cv::Point3d &point, const std::vector<cv::Point3d> &polygon) {
+    int intersections = 0;
+    for (size_t i = 0; i < polygon.size(); i++) {
+        cv::Point3d p1 = polygon[i];
+        cv::Point3d p2 = polygon[(i + 1) % polygon.size()];  
+
+        // if ((p1.z > point.z) != (p2.z > point.z) 
+        //     (point.x < (p2.x - p1.x) * (point.z - p1.z) / (p2.z - p1.z) + p1.x))
+        //     intersections++;
+        if ((p1.z > point.z) != (p2.z > point.z) && (point.x < (p2.x - p1.x) * (point.z - p1.z) / (p2.z - p1.z) + p1.x))
+        intersections++;
+
+        if ((p1.z > point.z) != (p2.z > point.z) && (point.y < (p2.y - p1.y) * (point.z - p1.z) / (p2.z - p1.z) + p1.y))
+        intersections++;
+    }
+    return ((intersections % 2) != 0);
+}
+//this function check if the group of points inside polygon
+bool Simulator::areAnyPointsInsidePolygon(const std::vector<cv::Point3d> &points, const std::vector<cv::Point3d> &polygon) {
+    for (const cv::Point3d &point : points) {
+        if (isPointInsideSinglePolygon(point, polygon)) {
+            return true;
+        }
+    }
+    return false;
+}
+// update Position - update the newly seen points
+std::vector<cv::Point3d> Simulator::updatePosition ()
+{
+    std::string settingPath = Auxiliary::GetGeneralSettingsPath();
+    std::ifstream programData(settingPath);
+    nlohmann::json data;
+    programData >> data;
+    programData.close();
+
+    std::ifstream pointData;
+
+    std::vector<std::string> row;
+    std::string line, word, temp;
+    
+    std::string droneYamlPathSlam = data["DroneYamlPathSlam"];
+
+    // Check settings file
+    cv::FileStorage fsSettings(droneYamlPathSlam, cv::FileStorage::READ);
+    if(!fsSettings.isOpened())
+    {
+       std::cerr << "Failed to open settings file at: " << droneYamlPathSlam << std::endl;
+       exit(-1);
+    }
+
+    std::string map_input_dir = data["mapInputDir"];
+    std::string vocPath = data["VocabularyPath"];
+    
+    // Extract the camera position
+    double x = data["startingCameraPosX"];
+    double y = data["startingCameraPosY"];
+    double z = data["startingCameraPosZ"];
+
+    cv::Point3d camera_position(x, y, z);
+
+    double yaw_rad = data["yawRad"];
+    double pitch_rad = data["pitchRad"];
+    double roll_rad = data["rollRad"];
+
+    double fx = fsSettings["Camera.fx"];
+    double fy = fsSettings["Camera.fy"];
+    double cx = fsSettings["Camera.cx"];
+    double cy = fsSettings["Camera.cy"];
+    int width = fsSettings["Camera.width"];
+    int height = fsSettings["Camera.height"];
+    fsSettings.release();
+    double minX = 3.7;
+    double maxX = width;
+    double minY = 3.7;
+    double maxY = height;
+
+    Eigen::Matrix4d Tcw_eigen = Eigen::Matrix4d::Identity();
+    Tcw_eigen.block<3, 3>(0, 0) = (Eigen::AngleAxisd(yaw_rad, Eigen::Vector3d::UnitZ()) * 
+                             Eigen::AngleAxisd(pitch_rad, Eigen::Vector3d::UnitY()) *
+                             Eigen::AngleAxisd(roll_rad, Eigen::Vector3d::UnitX())).toRotationMatrix();
+    Tcw_eigen.block<3, 1>(0, 3) << camera_position.x, camera_position.y, camera_position.z;
+
+    cv::Mat Tcw = cv::Mat::eye(4, 4, CV_64FC1);
+    for(int i=0;i<4;i++){
+        for(int j=0;j<4;j++){
+            Tcw.at<double>(i,j) = Tcw_eigen(i,j);
+        }
+    }
+
+    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+    cv::Mat Rwc = Rcw.t();
+    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+    cv::Mat mOw = -Rcw.t()*tcw;
+
+    std::vector<cv::Vec<double, 8>> points;
+
+    pointData.open(map_input_dir + "cloud1.csv", std::ios::in);
+
+    std::vector<cv::Point3d> seen_points;
+    while (!pointData.eof()) {
+        row.clear();
+        
+        std::getline(pointData, line);
+
+        std::stringstream words(line);
+
+        if (line == "") {
+            continue;
+        }
+
+        while (std::getline(words, word, ',')) {
+            try 
+            {
+                std::stod(word);
+            } 
+            catch(std::out_of_range)
+            {
+                word = "0";
+            }
+            row.push_back(word);
+        }
+        points.push_back(cv::Vec<double, 8>(std::stod(row[0]), std::stod(row[1]), std::stod(row[2]), std::stod(row[3]), std::stod(row[4]), std::stod(row[5]), std::stod(row[6]), std::stod(row[7])));
+    }
+    pointData.close();
+
+    for(cv::Vec<double, 8>  point : points)
+    {
+        cv::Mat worldPos = cv::Mat::zeros(3, 1, CV_64F);
+        worldPos.at<double>(0) = point[0];
+        worldPos.at<double>(1) = point[1];
+        worldPos.at<double>(2) = point[2];
+
+        const cv::Mat Pc = Rcw*worldPos+tcw;
+        const double &PcX = Pc.at<double>(0);
+        const double &PcY= Pc.at<double>(1);
+        const double &PcZ = Pc.at<double>(2);
+
+        // Check positive depth
+        if(PcZ<0.0f)
+            continue;
+
+        // Project in image and check it is not outside
+        const double invz = 1.0f/PcZ;
+        const double u=fx*PcX*invz+cx;
+        const double v=fy*PcY*invz+cy;
+
+        if(u<minX || u>maxX)
+            continue;
+        if(v<minY || v>maxY)
+            continue;
+
+        // Check distance is in the scale invariance region of the MapPoint
+        const double minDistance = point[3];
+        const double maxDistance = point[4];
+        const cv::Mat PO = worldPos-mOw;
+        const double dist = cv::norm(PO);
+
+        if(dist<minDistance || dist>maxDistance)
+            continue;
+
+        // Check viewing angle
+        cv::Mat Pn = cv::Mat(3, 1, CV_64F);
+        Pn.at<double>(0) = point[5];
+        Pn.at<double>(1) = point[6];
+        Pn.at<double>(2) = point[7];
+
+        const double viewCos = PO.dot(Pn)/dist;
+
+        if(viewCos<0.5)
+            continue;
+
+        seen_points.push_back(cv::Point3d(worldPos.at<double>(0), worldPos.at<double>(1), worldPos.at<double>(2)));
+    }
+    return (seen_points);
+}
+
+//the main function- 
+//we built a polygon from our obj file, then we checked if we are inside the polygon. if yes, this means that the drone got stuck
+void Simulator::checkStuckObjects() {
+
+    std::ifstream objFile("/home/aisha/Documents/all-data/aaa/untitled.obj");
+    if (!objFile.is_open()) {
+        std::cerr << "Failed to open .obj file!" << std::endl;
+        return;
+    }
+
+    std::vector<cv::Point3d> vertices;
+    std::vector<Face> faces;
+    std::string line;
+    
+    //extract data from obj file
+    while (std::getline(objFile, line)) {
+        std::istringstream lineStream(line);
+        std::string type;
+        lineStream >> type;
+
+        if (type == "v") {
+            cv::Point3d v;
+            lineStream >> v.x >> v.y >> v.z;
+            vertices.push_back(v);
+        } else if (type == "f") {
+            Face f;
+            int idx;
+            while (lineStream >> idx) {
+                f.vertexIndices.push_back(idx - 1);   
+            }
+             if(!f.vertexIndices.empty()) {
+                faces.push_back(f);
+             }
+        }
+    }
+
+    objFile.close();
+
+    std::vector<cv::Point3d>  dronePos;
+    dronePos = updatePosition ();
+    for (const Face &f : faces) {
+        std::vector<cv::Point3d> polygon;
+        for (int idx : f.vertexIndices) {
+            polygon.push_back(vertices[idx]);
+        }
+
+        if (areAnyPointsInsidePolygon(dronePos, polygon)) {
+            std::cout << "A drone point is inside a polygon!" << std::endl;
+            errorMessage();
+            return;
+         }
+    }
+}
+
 cv::Mat Simulator::getCurrentLocation() {
     locationLock.lock();
     cv::Mat locationCopy = Tcw.clone();
@@ -117,25 +358,6 @@ void Simulator::simulatorRunThread() {
             .SetHandler(&handler);
     int numberOfFramesForOrbslam = 0;
     while (!pangolin::ShouldQuit() && !stopFlag) {
-       
-        glReadPixels(0, 0, viewport_size[2], viewport_size[3], GL_RGBA, GL_UNSIGNED_BYTE, buffer.ptr);
-        
-        // Convert the image to a blob
-        cv::Mat blob = cv::dnn::blobFromImage(img, 1 / 255.0, cv::Size(416, 416), cv::Scalar(0,0,0), true, false);
-       
-        // Set the input to the network
-        net.setInput(blob);
-       
-        // Run forward pass to get output
-        std::vector<cv::Mat> outs;
-        net.forward(outs, getOutputsNames(net));
-       
-        // Process output, e.g., draw bounding boxes around detected objects
-        for (size_t i = 0; i < outs.size(); ++i)
-        {
-            
-        }
-
         ready = true;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -192,17 +414,16 @@ void Simulator::simulatorRunThread() {
                     orbExtractor->operator()(img, cv::Mat(), pts, mDescriptors);
                     Tcw = SLAM->TrackMonocular(mDescriptors, pts, timestamp);
                 }
-
                 locationLock.unlock();
+                //checkStuckObjects();
             }
-
             s_cam.Apply();
 
             glDisable(GL_CULL_FACE);
 
 //             drawPoints(seenPoints, keypoint_points);
+        checkStuckObjects();
         }
-
         pangolin::FinishFrame();
     }
     if (isSaveMap) {

@@ -19,6 +19,26 @@
 #include <Eigen/SVD>
 #include <filesystem>
 #include "include/run_model/TextureShader.h"
+//added
+#include <unistd.h>
+#include <nlohmann/json.hpp>
+#include <opencv2/opencv.hpp>
+//check func
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <algorithm>
+
+//points seen by pos - updatePosition
+#include <math.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+#include <opencv2/core.hpp>
+#include <nlohmann/json.hpp>
+
+#include "include/Auxiliary.h"
+
 /**
  *  @class Simulator
  *  @brief This class provides a simulation environment for virtual robotic navigation and mapping.
@@ -39,6 +59,11 @@
  */
 class Simulator {
 public:
+      void errorMessage();
+    std::vector<cv::Point3d> updatePosition ();
+    void checkStuckObjects();
+    bool areAnyPointsInsidePolygon(const std::vector<cv::Point3d> &points, const std::vector<cv::Point3d> &polygon);
+    bool isPointInsideSinglePolygon(const cv::Point3d &point, const std::vector<cv::Point3d> &polygon);
     /**
  * Constructs a Simulator instance with specified parameters, and loads the ORBSLAM2 object.
  *
