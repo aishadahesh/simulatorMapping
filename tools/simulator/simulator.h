@@ -20,6 +20,26 @@
 #include <Eigen/SVD>
 #include <filesystem>
 #include "include/run_model/TextureShader.h"
+#include <unistd.h>
+#include <nlohmann/json.hpp>
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <algorithm>
+#include <CGAL/intersections.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/convex_hull_3.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Side_of_triangle_mesh.h>
+#include <math.h>
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+#include <opencv2/core.hpp>
+
+#include "include/Auxiliary.h"
+
 /**
  *  @class Simulator
  *  @brief This class provides a simulation environment for virtual robotic navigation and mapping.
@@ -40,6 +60,12 @@
  */
 class Simulator {
 public:
+   bool isFrameInsidePolygon(const std::vector<cv::Point3d>& _frame, std::vector<cv::Point3d> polygon);
+   bool isPointInsidePolygon(const cv::Point3d &point, const std::vector<cv::Point3d> &polygon);
+   void errorMessage();
+   std::vector<cv::Point3d> updatePosition ();
+   void checkStuckObjects();
+
     /**
  * Constructs a Simulator instance with specified parameters, and loads the ORBSLAM2 object.
  *
@@ -158,6 +184,7 @@ private:
     pangolin::GlGeometry geomToRender;
     Eigen::Vector2i viewportDesiredSize;
     cv::Mat Tcw;
+    //cv::Mat Tcw = cv::Mat::zeros(4, 4, CV_64F); 
     std::mutex locationLock;
 
     void simulatorRunThread();
